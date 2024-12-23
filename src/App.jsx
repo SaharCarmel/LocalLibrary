@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
-import ReadingMetrics from './ReadingMetrics';
-import LibraryAnalytics from './LibraryAnalytics';
+import ReadingMetrics from './ReadingMetrics.jsx';
+import LibraryAnalytics from './LibraryAnalytics.js';
 
 const App = () => {
   return (

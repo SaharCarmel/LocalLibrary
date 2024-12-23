@@ -4,6 +4,7 @@ import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Toolti
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card.jsx';
 import { Progress } from './components/ui/progress.jsx';
 import { BookOpen } from 'lucide-react';
+import { Button } from './components/ui/button';
 
 const LibraryAnalytics = () => {
   const { stats, loading, error } = useLibraryStats();
@@ -17,7 +18,10 @@ const LibraryAnalytics = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
-      <h1 className="text-3xl font-bold">Library Overview</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Library Overview</h1>
+        <Button to="/reading-metrics">View Reading Metrics</Button>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {/* Stats Cards */}
