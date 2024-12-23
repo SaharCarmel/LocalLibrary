@@ -1,9 +1,7 @@
-
 import React, { useState } from 'react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card';
 import { Clock, TrendingUp } from 'lucide-react';
-import { Button } from './components/ui/button';
 
 const ReadingMetrics = () => {
   const [speedMetrics] = useState({
@@ -34,10 +32,6 @@ const ReadingMetrics = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Reading Speed Analytics</h1>
-        <Button to="/">View Library Analytics</Button>
-      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
@@ -70,6 +64,18 @@ const ReadingMetrics = () => {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Current Book</CardTitle>
+        </CardHeader>
+        <CardContent className="flex items-center justify-between">
+          <div>
+            <p className="text-2xl font-bold">Current Book Title</p>
+            <p className="text-sm text-gray-500">Progress: XX%</p>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
