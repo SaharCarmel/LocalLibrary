@@ -6,6 +6,7 @@ import { Progress } from './components/ui/progress.jsx';
 import { BookOpen } from 'lucide-react';
 import { Button } from './components/ui/button';
 import BookSelector from './BookSelector';
+import SessionAdd from './components/SessionAdd';
 
 const LibraryAnalytics = () => {
   const [isBookSelectorOpen, setIsBookSelectorOpen] = useState(false);
@@ -156,12 +157,18 @@ const LibraryAnalytics = () => {
                     <span className="font-medium">{book.title}</span>
                     <p className="text-sm text-gray-500">{book.genre}</p>
                   </div>
-                  <div
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleRemoveBook(book.id)}
-                  >
-                    Remove
+                  <div className="flex gap-2">
+                    <SessionAdd 
+                      bookId={book.id} 
+                      onSessionAdded={refetch}
+                    />
+                    <div
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleRemoveBook(book.id)}
+                    >
+                      Remove
+                    </div>
                   </div>
                 </div>
                 <Progress value={book.progress} />
