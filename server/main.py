@@ -28,7 +28,8 @@ async def root():
 
 @app.get("/api/books", response_model=List[Book])
 def get_books(session: Session = Depends(get_session)):
-    return session.exec(select(Book)).all()
+    statement = select(Book)
+    return session.execute(statement).scalars().all()
 
 @app.get("/api/books/{book_id}", response_model=Book)
 def get_book(book_id: int, session: Session = Depends(get_session)):
@@ -39,12 +40,12 @@ def get_book(book_id: int, session: Session = Depends(get_session)):
 
 @app.get("/api/books/search/{query}", response_model=List[Book])
 def search_books(query: str, session: Session = Depends(get_session)):
-    books = session.exec(
+    books = session.execute(
         select(Book).where(
             (Book.title.contains(query)) | 
             (Book.author.contains(query))
         )
-    ).all()
+    ).scalars().all()
     return books
 
 class BookStatusUpdate(BaseModel):
@@ -55,7 +56,7 @@ def update_book_status(book_id: int, status_update: BookStatusUpdate, session: S
     try:
         # First check if the book exists
         stmt = select(Book).where(Book.id == book_id)
-        book = session.exec(stmt).first()
+        book = session.execute(stmt).scalar_one_or_none()
         
         if not book:
             print(f"Book with ID {book_id} not found")  # Debug logging
@@ -84,11 +85,11 @@ def create_session(session_data: ReadingSession, db: Session = Depends(get_sessi
 
 @app.get("/api/sessions", response_model=List[ReadingSession])
 def get_sessions(session: Session = Depends(get_session)):
-    return session.exec(select(ReadingSession)).all()
+    return session.execute(select(ReadingSession)).scalars().all()
 
 @app.get("/api/stats")
 def get_stats(session: Session = Depends(get_session)):
-    books = session.exec(select(Book)).all()
+    books = session.execute(select(Book)).scalars().all()
     total_books = len(books)
     completed_books = sum(1 for book in books if book.status == "completed")
     in_progress_books = sum(1 for book in books if book.status == "in_progress")
@@ -111,7 +112,8 @@ def get_stats(session: Session = Depends(get_session)):
         {
             "title": book.title,
             "progress": book.progress,
-            "genre": book.genre
+            "genre": book.genre,
+            "id": book.id
         }
         for book in books
         if book.status == "in_progress"

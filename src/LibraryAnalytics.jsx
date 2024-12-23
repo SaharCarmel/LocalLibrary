@@ -9,7 +9,18 @@ import BookSelector from './BookSelector';
 
 const LibraryAnalytics = () => {
   const [isBookSelectorOpen, setIsBookSelectorOpen] = useState(false);
-  const { stats, loading, error, refetch, removeBook } = useLibraryStats();
+  const [removeError, setRemoveError] = useState(null);
+  const { stats, loading, error, allBooks, refetch, removeBook} = useLibraryStats();
+
+  const handleRemoveBook = async (bookId) => {
+    try {
+      await removeBook(bookId);
+      await refetch();
+      setRemoveError(null);
+    } catch (err) {
+      setRemoveError('Failed to remove book');
+    }
+  };
 
   if (loading) return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
   if (error) return <div className="flex justify-center items-center min-h-screen text-red-500">Error: {error}</div>;
@@ -131,7 +142,6 @@ const LibraryAnalytics = () => {
         <CardContent>
           <div className="space-y-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Currently Reading</h2>
               <button
                 onClick={() => setIsBookSelectorOpen(true)}
                 className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
@@ -146,20 +156,20 @@ const LibraryAnalytics = () => {
                     <span className="font-medium">{book.title}</span>
                     <p className="text-sm text-gray-500">{book.genre}</p>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <span className="text-sm text-gray-500">{book.progress}%</span>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => removeBook(book.id)}
-                    >
-                      Remove
-                    </Button>
+                  <div
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => handleRemoveBook(book.id)}
+                  >
+                    Remove
                   </div>
                 </div>
                 <Progress value={book.progress} />
               </div>
             ))}
+            {removeError && (
+              <div className="text-red-500 mt-2">{removeError}</div>
+            )}
           </div>
         </CardContent>
       </Card>

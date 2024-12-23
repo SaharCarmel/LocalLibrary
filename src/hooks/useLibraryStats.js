@@ -4,6 +4,22 @@ export const useLibraryStats = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [allBooks, setAllBooks] = useState([]);
+
+  const fetchAllBooks = useCallback(async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/books');
+      if (!response.ok) {
+        throw new Error(`Failed to fetch books: ${response.status}`);
+      }
+      const data = await response.json();
+      setAllBooks(data);
+      return data;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  }, []);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -43,15 +59,22 @@ export const useLibraryStats = () => {
     }
   };
 
+  const refetchStatsAndBooks = async () => {
+    await fetchStats();
+    await fetchAllBooks();
+  } 
+
   useEffect(() => {
     fetchStats();
-  }, [fetchStats]);
+    fetchAllBooks();
+  }, [fetchStats, fetchAllBooks]);
 
   return {
     stats,
     loading,
     error,
-    refetch: fetchStats,  // This is now properly defined as an async function
+    allBooks,
+    refetch: refetchStatsAndBooks,  // This is now properly defined as an async function
     removeBook, // Add this to the returned object
   };
 };
