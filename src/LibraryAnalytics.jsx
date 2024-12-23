@@ -1,13 +1,15 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLibraryStats } from './hooks/useLibraryStats.js';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card.jsx';
 import { Progress } from './components/ui/progress.jsx';
 import { BookOpen } from 'lucide-react';
 import { Button } from './components/ui/button';
+import BookSelector from './BookSelector';
 
 const LibraryAnalytics = () => {
-  const { stats, loading, error } = useLibraryStats();
+  const [isBookSelectorOpen, setIsBookSelectorOpen] = useState(false);
+  const { stats, loading, error, refetch, removeBook } = useLibraryStats();
 
   if (loading) return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
   if (error) return <div className="flex justify-center items-center min-h-screen text-red-500">Error: {error}</div>;
@@ -128,6 +130,15 @@ const LibraryAnalytics = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Currently Reading</h2>
+              <button
+                onClick={() => setIsBookSelectorOpen(true)}
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                Add Book
+              </button>
+            </div>
             {currentlyReading.map((book) => (
               <div key={book.title} className="space-y-2">
                 <div className="flex justify-between items-center">
@@ -135,7 +146,16 @@ const LibraryAnalytics = () => {
                     <span className="font-medium">{book.title}</span>
                     <p className="text-sm text-gray-500">{book.genre}</p>
                   </div>
-                  <span className="text-sm text-gray-500">{book.progress}%</span>
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm text-gray-500">{book.progress}%</span>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => removeBook(book.id)}
+                    >
+                      Remove
+                    </Button>
+                  </div>
                 </div>
                 <Progress value={book.progress} />
               </div>
@@ -143,6 +163,15 @@ const LibraryAnalytics = () => {
           </div>
         </CardContent>
       </Card>
+
+      <BookSelector
+        isOpen={isBookSelectorOpen}
+        onClose={() => setIsBookSelectorOpen(false)}
+        onSelect={async () => {
+          await refetch();
+          setIsBookSelectorOpen(false);
+        }}
+      />
     </div>
   );
 };

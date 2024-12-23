@@ -1,31 +1,57 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 export const useLibraryStats = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const response = await fetch('/api/stats');
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('API Error:', errorText);
-          throw new Error(`Failed to fetch stats: ${response.status} ${response.statusText}`);
-        }
-        const data = await response.json();
-        setStats(data);
-      } catch (err) {
-        console.error('Fetch error:', err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
+  const fetchStats = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('http://localhost:3001/api/stats');
+      if (!response.ok) {
+        throw new Error(`Failed to fetch stats: ${response.status}`);
       }
-    };
-
-    fetchStats();
+      const data = await response.json();
+      setStats(data);
+      return data;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  return { stats, loading, error };
+  const removeBook = async (bookId) => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/books/${bookId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: 'not_started' })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to remove book from reading list');
+      }
+      
+      await fetchStats();
+    } catch (error) {
+      console.error('Error removing book:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
+
+  return {
+    stats,
+    loading,
+    error,
+    refetch: fetchStats,  // This is now properly defined as an async function
+    removeBook, // Add this to the returned object
+  };
 };

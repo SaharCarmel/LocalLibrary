@@ -5,6 +5,7 @@ from typing import List
 from models import Book, ReadingSession
 from database import get_session, init_db
 from datetime import datetime
+from pydantic import BaseModel
 
 app = FastAPI()
 
@@ -45,6 +46,33 @@ def search_books(query: str, session: Session = Depends(get_session)):
         )
     ).all()
     return books
+
+class BookStatusUpdate(BaseModel):
+    status: str
+
+@app.put("/api/books/{book_id}/status", response_model=Book)
+def update_book_status(book_id: int, status_update: BookStatusUpdate, session: Session = Depends(get_session)):
+    try:
+        # First check if the book exists
+        stmt = select(Book).where(Book.id == book_id)
+        book = session.exec(stmt).first()
+        
+        if not book:
+            print(f"Book with ID {book_id} not found")  # Debug logging
+            raise HTTPException(status_code=404, detail=f"Book with ID {book_id} not found")
+        
+        print(f"Updating book {book.title} (ID: {book_id}) status to: {status_update.status}")  # Debug logging
+        
+        # Update the book status
+        book.status = status_update.status
+        session.add(book)
+        session.commit()
+        session.refresh(book)
+        
+        return book
+    except Exception as e:
+        print(f"Error updating book status: {str(e)}")  # Debug logging
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/sessions", response_model=ReadingSession)
 def create_session(session_data: ReadingSession, db: Session = Depends(get_session)):
