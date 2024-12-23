@@ -8,13 +8,19 @@ class BookBase(SQLModel):
     year: Optional[int] = None
     genre: Optional[str] = None
     file_path: Optional[str] = None
+    pages: Optional[int] = None
+    progress: Optional[int] = None
+    completed_date: Optional[datetime] = None
+    rating: Optional[int] = Field(default=None, ge=1, le=5)
+    language: Optional[str] = None
+    format: Optional[str] = None
+    source: Optional[str] = None
+    notes: Optional[str] = None
 
-class Book(SQLModel, table=True):
+class Book(BookBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    title: str
-    author: str
-    total_pages: Optional[int] = None
     reading_sessions: List["ReadingSession"] = Relationship(back_populates="book")
+    status: Optional[str] = None
 
 class ReadingSessionBase(SQLModel):
     book_id: Optional[int] = Field(default=None, foreign_key="book.id")

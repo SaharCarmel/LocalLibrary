@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select
 from typing import List
 from models import Book, ReadingSession
@@ -7,9 +8,22 @@ from datetime import datetime
 
 app = FastAPI()
 
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # Vite's default port
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 @app.on_event("startup")
 def on_startup():
     init_db()
+
+@app.get("/")
+async def root():
+    return {"message": "Welcome to Library Analytics API. Visit /docs for the API documentation"}
 
 @app.get("/api/books", response_model=List[Book])
 def get_books(session: Session = Depends(get_session)):
@@ -46,38 +60,52 @@ def get_sessions(session: Session = Depends(get_session)):
 
 @app.get("/api/stats")
 def get_stats(session: Session = Depends(get_session)):
-    # Total reading time
-    reading_sessions = session.exec(select(ReadingSession)).all()
-    total_minutes = sum(
-        (rs.end_time - rs.start_time).total_seconds() / 60 
-        for rs in reading_sessions
-    )
-
-    # Pages per book
     books = session.exec(select(Book)).all()
-    pages_per_book = []
-    for book in books:
-        pages = sum(
-            rs.end_page - rs.start_page 
-            for rs in book.reading_sessions 
-            if rs.end_page and rs.start_page
-        )
-        if pages > 0:
-            pages_per_book.append({"title": book.title, "pages_read": pages})
+    total_books = len(books)
+    completed_books = sum(1 for book in books if book.status == "completed")
+    in_progress_books = sum(1 for book in books if book.status == "in_progress")
+    
+    # Calculate total pages and average completion
+    total_pages = sum(book.pages for book in books if book.pages)
+    average_completion = (completed_books / total_books * 100) if total_books > 0 else 0
 
-    # Reading by location
-    location_counts = {}
-    for rs in reading_sessions:
-        if rs.location:
-            location_counts[rs.location] = location_counts.get(rs.location, 0) + 1
+    # Genre statistics
+    genre_stats = {}
+    for book in books:
+        if book.genre not in genre_stats:
+            genre_stats[book.genre] = {"books": 0, "completed": 0}
+        genre_stats[book.genre]["books"] += 1
+        if book.status == "completed":
+            genre_stats[book.genre]["completed"] += 1
+
+    # Currently reading books
+    current_books = [
+        {
+            "title": book.title,
+            "progress": book.progress,
+            "genre": book.genre
+        }
+        for book in books
+        if book.status == "in_progress"
+    ]
 
     return {
-        "total_reading_minutes": int(total_minutes),
-        "pages_per_book": pages_per_book,
-        "reading_by_location": [
-            {"location": loc, "count": count} 
-            for loc, count in location_counts.items()
-        ]
+        "libraryStats": {
+            "totalBooks": total_books,
+            "completedBooks": completed_books,
+            "inProgressBooks": in_progress_books,
+            "totalPages": total_pages,
+            "averageCompletion": round(average_completion, 1)
+        },
+        "genreData": [
+            {
+                "name": genre,
+                "books": stats["books"],
+                "completed": stats["completed"]
+            }
+            for genre, stats in genre_stats.items()
+        ],
+        "currentlyReading": current_books
     }
 
 if __name__ == "__main__":
