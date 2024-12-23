@@ -81,11 +81,50 @@ def create_session(session_data: ReadingSession, db: Session = Depends(get_sessi
     db.add(session)
     db.commit()
     db.refresh(session)
+    
+    # Calculate progress for all books after adding new session
+    calculate_books_progress(db)
+    
     return session
 
 @app.get("/api/sessions", response_model=List[ReadingSession])
 def get_sessions(session: Session = Depends(get_session)):
     return session.execute(select(ReadingSession)).scalars().all()
+
+@app.post("/api/calculate-progress")
+def calculate_books_progress(session: Session = Depends(get_session)):
+    # Get all books and sessions
+    books = session.execute(select(Book)).scalars().all()
+    reading_sessions = session.execute(select(ReadingSession)).scalars().all()
+    
+    # Create a dictionary to store progress for each book
+    book_progress = {}
+    
+    # Calculate progress for each book based on sessions
+    for reading_session in reading_sessions:
+        if reading_session.book_id not in book_progress:
+            book_progress[reading_session.book_id] = 0
+        book_progress[reading_session.book_id] += reading_session.end_page - reading_session.start_page
+    
+    # Update books with calculated progress
+    updated_books = []
+    for book in books:
+        if book.id in book_progress:
+            progress = min(100, round((book_progress[book.id] / book.pages) * 100))
+            book.progress = progress
+            if progress == 100:
+                book.status = "completed"
+            elif progress > 0:
+                book.status = "in_progress"
+            session.add(book)
+            updated_books.append({
+                "id": book.id,
+                "progress": progress,
+                "status": book.status
+            })
+    
+    session.commit()
+    return {"updated_books": updated_books}
 
 @app.get("/api/stats")
 def get_stats(session: Session = Depends(get_session)):
